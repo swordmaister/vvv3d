@@ -119,7 +119,6 @@
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(5, 10, 5); scene.add(dirLight);
         scene.add(new THREE.GridHelper(40, 40, 0x3b82f6, 0x1e293b));
 
-        // 🚨 State: moveSubModeを追加
         let objects = [], connections = [], historyStack = [];
         let selectedObjects = [], connectStartObj = null;
         let currentMode = 'move';
@@ -132,7 +131,6 @@
         const dragOffset = new THREE.Vector3();
         let joyMove = new THREE.Vector2(0, 0);
 
-        // Node Spawn
         function spawnNameTag(word, scale=1, pos=null) {
             const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); ctx.font = 'bold 72px sans-serif'; const textW = ctx.measureText(word).width;
@@ -164,7 +162,6 @@
             pushHistory({type:'add', objects:created}); input.value='';
         });
 
-        // Connection
         function createConnection(A, B) {
             if(connections.some(c=>(c.objA===A&&c.objB===B)||(c.objB===A&&c.objA===B))) return;
             const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1, 8).rotateX(Math.PI/2), new THREE.MeshBasicMaterial({color:0x4ade80, transparent:true, opacity:0.8}));
@@ -183,7 +180,6 @@
             });
         }
 
-        // Delete & Group & Undo
         function executeDelete(targets) {
             if (!targets.length) return; const dObjs=[], dConns=[];
             for(let i=targets.length-1; i>=0; i--) {
@@ -220,7 +216,6 @@
         }
         document.getElementById('btn-undo').addEventListener('click', executeUndo);
 
-        // Selection & Modes
         function setEmissive(mesh, hex) { if(mesh.material) { if(Array.isArray(mesh.material)) mesh.material.forEach(m => { if(m&&m.emissive)m.emissive.setHex(hex); }); else if(mesh.material.emissive) mesh.material.emissive.setHex(hex); } }
         function updateSelection(mesh) {
             const isMulti = document.getElementById('btn-group').classList.contains('active-group-mode');
@@ -261,7 +256,6 @@
             }
         });
 
-        // Touch Interaction
         const raycaster = new THREE.Raycaster(); raycaster.params.Line.threshold = 0.5;
 
         let uiVisible = false;
@@ -288,14 +282,13 @@
             const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
             raycaster.setFromCamera(mouse, camera);
 
-            // 🚨 追加: キャリー中（持ち運び中）のオブジェクトがある場合は、タップで配置して終了
             if (carryingObject) {
                 if(carryingObject.userData.baseScale) carryingObject.userData.targetScale = carryingObject.userData.baseScale;
                 if(carryingObject.position.distanceTo(carryingObject.userData.startPos) > 0.01) {
                     pushHistory({type:'move', moves:[{obj:carryingObject, oldPos:carryingObject.userData.startPos.clone()}]});
                 }
                 carryingObject = null;
-                isLooking = true; // そのままスワイプで視点移動できるようにする
+                isLooking = true; 
                 lastLookX = e.clientX; lastLookY = e.clientY;
                 return;
             }
@@ -314,7 +307,6 @@
                         if(hits[0].point.distanceTo(pA) < hits[0].point.distanceTo(pB)) { draggedConnectionEnd = 'A'; draggedConnectionOriginalNode = conn.objA; conn.objA = null; conn.floatA.copy(hits[0].point); }
                         else { draggedConnectionEnd = 'B'; draggedConnectionOriginalNode = conn.objB; conn.objB = null; conn.floatB.copy(hits[0].point); }
                     } else {
-                        // ドラッグとタップの両方を待ち受ける
                         isHoldingObject = true; heldObject = target; heldObject.userData.startPos = heldObject.position.clone(); heldObject.userData.isDragged = false; 
                         const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
                         dragPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hits[0].point);
@@ -348,7 +340,6 @@
                 raycaster.setFromCamera(mouse, camera); const targetPt = new THREE.Vector3(); 
                 if(raycaster.ray.intersectPlane(dragPlane, targetPt)) { heldObject.position.copy(targetPt).add(dragOffset); }
             } else if (isLooking || carryingObject) {
-                // 🚨 修正: キャリー中（手元モード）もスワイプで自由に視点移動させる
                 const dx = e.clientX - lastLookX, dy = e.clientY - lastLookY;
                 camera.rotation.y -= dx * 0.005; camera.rotation.x -= dy * 0.005;
                 camera.rotation.x = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, camera.rotation.x));
@@ -368,22 +359,17 @@
                 isHoldingObject = false;
                 if(heldObject) {
                     if(!heldObject.userData.isDragged) {
-                        // タップされた場合
                         if (document.getElementById('btn-group').classList.contains('active-group-mode')) {
-                            // 複数選択モードなら選択をトグル
                             if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale;
                             updateSelection(heldObject);
                             heldObject = null;
                         } else {
-                            // 通常の移動モードなら、キャリー状態（持ち運び）に移行
                             carryingObject = heldObject;
-                            // 🚨 修正: カメラからの相対位置を計算して保存（視界を塞がないようにそのままの位置関係を維持）
                             carryingObject.userData.localOffset = carryingObject.position.clone().applyMatrix4(camera.matrixWorldInverse);
                             heldObject = null;
-                            isLooking = true; // そのまま視点移動できるようにする
+                            isLooking = true; 
                         }
                     } else {
-                        // ドラッグして離した場合
                         if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale;
                         if(heldObject.position.distanceTo(heldObject.userData.startPos) > 0.01) { 
                             pushHistory({type:'move', moves:[{obj:heldObject, oldPos:heldObject.userData.startPos.clone()}]}); 
@@ -482,7 +468,7 @@
                 if(vrHeldObject.position.distanceTo(vrHeldObject.userData.startPos) > 0.01) {
                     pushHistory({type:'move', moves:[{obj:vrHeldObject, oldPos:vrHeldObject.userData.startPos.clone()}]});
                 } else {
-                    updateSelection(vrHeldObject); // 動かしていなければ選択
+                    updateSelection(vrHeldObject); 
                 }
                 vrHeldObject = null;
             }
@@ -498,64 +484,65 @@
             const time = Date.now() * 0.001;
 
             if (!renderer.xr.isPresenting) {
-                // スマホ・PCでの移動
                 const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
                 playerRig.position.addScaledVector(camDir, -joyMove.y * 0.15); playerRig.position.addScaledVector(camRight, joyMove.x * 0.15);
             } else {
                 // 🚨 VRでのジョイスティック移動 & ショートカット操作
                 const session = renderer.xr.getSession();
+                if (session && currentVrUiMode === 'shortcut') {
+                    for (const s of session.inputSources) {
+                        if (!s.gamepad) continue;
+                        const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
+                        if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
+                        prevBtns = {a:bA, b:bB, x:bX, y:bY};
+                    }
+                }
+
+                // 🚨 ジョイスティックによる移動と旋回
                 if (session) {
                     for (const s of session.inputSources) {
                         if (!s.gamepad) continue;
-                        
                         const axes = s.gamepad.axes;
-                        const deadzone = 0.15; // 誤動作防止のデッドゾーン
+                        let xAxis = 0, yAxis = 0;
+                        
+                        // コントローラーによってaxesのインデックスが異なるため柔軟に対応
+                        if (axes.length >= 4) {
+                            xAxis = axes[2]; yAxis = axes[3]; // 一般的なQuest環境
+                        } else if (axes.length >= 2) {
+                            xAxis = axes[0]; yAxis = axes[1];
+                        }
 
-                        // 1. 左手: 前後移動とカニ歩き
-                        if (s.handedness === 'left' && axes.length >= 2) {
-                            const xAxis = axes[0];
-                            const yAxis = axes[1];
-                            if (Math.abs(xAxis) > deadzone || Math.abs(yAxis) > deadzone) {
+                        const deadzone = 0.15;
+                        if (Math.abs(xAxis) < deadzone) xAxis = 0;
+                        if (Math.abs(yAxis) < deadzone) yAxis = 0;
+
+                        if (s.handedness === 'left') {
+                            // 左手: 前後とカニ歩き
+                            if (xAxis !== 0 || yAxis !== 0) {
                                 const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
-                                
-                                // yAxis: 負=前, 正=後 | xAxis: 負=左, 正=右
-                                playerRig.position.addScaledVector(camDir, -yAxis * 0.08); 
+                                playerRig.position.addScaledVector(camDir, -yAxis * 0.08);
                                 playerRig.position.addScaledVector(camRight, xAxis * 0.08);
                             }
-                        }
-
-                        // 2. 右手: カメラの向き（ヨー）の回転
-                        if (s.handedness === 'right' && axes.length >= 1) {
-                            const xAxis = axes[0];
-                            if (Math.abs(xAxis) > deadzone) {
-                                // スムースターン（滑らかな回転）
+                        } else if (s.handedness === 'right') {
+                            // 右手: 旋回 (スムーズターン)
+                            if (xAxis !== 0) {
                                 playerRig.rotation.y -= xAxis * 0.04;
                             }
-                        }
-
-                        // 3. 物理ボタン（ショートカット）
-                        if (currentVrUiMode === 'shortcut') {
-                            const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
-                            if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
-                            prevBtns = {a:bA, b:bB, x:bX, y:bY};
                         }
                     }
                 }
             }
 
-            // 🚨 修正: スマホ/PCのキャリーモード追従を共通スコープへ移動
-            // （VRでも将来的な拡張のために共通化）
             if (carryingObject && carryingObject.userData.localOffset) {
                 const targetPos = carryingObject.userData.localOffset.clone();
                 targetPos.applyMatrix4(camera.matrixWorld);
                 carryingObject.position.lerp(targetPos, 0.2);
-                carryingObject.quaternion.slerp(camera.quaternion, 0.2); // カメラの方を向く
+                carryingObject.quaternion.slerp(camera.quaternion, 0.2); 
             }
 
             objects.forEach((o, i) => {
-                // 🚨 キャリー中のオブジェクトは揺らさない
                 if (!o.userData.isConnection && o.parent === scene && heldObject !== o && vrHeldObject !== o && carryingObject !== o) { 
                     o.position.y += Math.sin(time + i) * 0.002; o.quaternion.slerp(camera.quaternion, 0.05); 
                 }
@@ -568,8 +555,9 @@
             renderer.render(scene, camera);
         });
 
+        // 🚨 初期ノードに今回のデバッグ・実装項目を反映
         window.onload = () => { 
-            const words = ["直感操作", "アイデア", "思考整理", "空間配置", "無限", "創造", "言葉を紡ぐ"];
+            const words = ["左スティック移動", "右スティック旋回", "カニ歩き対応", "VR操作改善", "アイデア", "思考整理", "無限"];
             words.forEach((w, i) => {
                 const angle = (i / words.length) * Math.PI * 2;
                 const r = 4;
@@ -583,10 +571,6 @@
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
