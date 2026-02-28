@@ -12,45 +12,55 @@
         
         .glass-panel { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); color: white; }
 
-        /* スマホ照準器＆アクション系 */
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(255, 255, 255, 0.9); border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; box-shadow: 0 0 4px rgba(0,0,0,0.8); }
-        #mobile-controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        #joystick-zone { position: absolute; bottom: 80px; left: 20px; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; }
+        #joystick-zone { position: absolute; bottom: 80px; left: 20px; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; pointer-events: auto; z-index: 10; transition: opacity 0.3s; }
         #joystick-knob { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.6); border-radius: 50%; position: absolute; top: 30px; left: 30px; }
-        #action-btn { position: absolute; bottom: 80px; right: 20px; width: 70px; height: 70px; background: rgba(59, 130, 246, 0.8); border-radius: 50%; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: transform 0.1s; }
 
-        /* UIボトムパネル */
-        #ui-bottom { position: absolute; bottom: 0; left: 0; width: 100vw; padding: 10px 15px calc(env(safe-area-inset-bottom, 10px) + 10px); box-sizing: border-box; z-index: 20; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s; transform: translateY(100%); pointer-events: auto; }
+        #ui-bottom { position: absolute; bottom: 0; left: 0; width: 100vw; padding: 10px 15px calc(env(safe-area-inset-bottom, 10px) + 10px); box-sizing: border-box; z-index: 20; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(100%); pointer-events: auto; }
         #ui-bottom.show { transform: translateY(0); }
-        #ui-toggle-btn { position: absolute; bottom: max(10px, env(safe-area-inset-bottom, 10px)); left: 50%; transform: translateX(-50%); z-index: 30; padding: 8px 20px; border-radius: 9999px; font-weight: bold; font-size: 14px; pointer-events: auto; transition: bottom 0.3s; display: flex; align-items: center; gap: 8px; }
-        #ui-toggle-btn.ui-open { bottom: max(260px, calc(env(safe-area-inset-bottom, 10px) + 240px)); }
+
+        #bottom-buttons-container {
+            position: absolute; bottom: max(10px, env(safe-area-inset-bottom, 10px)); left: 50%; transform: translateX(-50%);
+            z-index: 30; display: flex; gap: 12px; align-items: center; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none; width: max-content;
+        }
+        
+        body.ui-open #bottom-buttons-container { bottom: max(200px, calc(env(safe-area-inset-bottom, 10px) + 180px)); }
+
+        #ui-toggle-btn { position: relative; padding: 8px 20px; border-radius: 9999px; font-weight: bold; font-size: 14px; pointer-events: auto; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+
+        /* VR移行ボタンのスタイル */
+        button#VRButton { 
+            position: relative !important; top: auto !important; right: auto !important; bottom: auto !important; left: auto !important; 
+            transform: none !important; z-index: 30 !important; width: auto !important; padding: 8px 15px !important; margin: 0 !important;
+            border-radius: 9999px !important; background: rgba(30, 41, 59, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important; color: white !important; font-weight: bold !important; font-size: 14px !important;
+            pointer-events: auto !important; transition: display 0.3s;
+        }
 
         .btn { transition: all 0.1s; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn:active { transform: scale(0.95); }
         .mode-active { background-color: #3b82f6 !important; color: white !important; border-color: #60a5fa !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
         .mode-delete-active { background-color: #ef4444 !important; color: white !important; border-color: #f87171 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
-        .long-press-hint { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 2px; font-weight: normal; }
+        .long-press-hint { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 2px; font-weight: normal; pointer-events: none; }
 
-        /* VR時は2DのUIを消す */
-        body.is-vr #mobile-controls, body.is-vr #crosshair, body.is-vr #ui-toggle-btn, body.is-vr #ui-bottom { display: none !important; }
+        body.is-vr #joystick-zone, body.is-vr #bottom-buttons-container, body.is-vr #ui-bottom { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="canvas-container"></div>
     
-    <div id="crosshair"></div>
-    <div id="mobile-controls">
-        <div id="joystick-zone"><div id="joystick-knob"></div></div>
-        <div id="action-btn">ACTION</div>
+    <div id="joystick-zone"><div id="joystick-knob"></div></div>
+
+    <div id="bottom-buttons-container">
+        <button id="ui-toggle-btn" class="glass-panel" onpointerdown="event.stopPropagation()">
+            <svg id="ui-toggle-icon" class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            <span>言葉を紡ぐ</span>
+        </button>
+        <!-- VRButton -->
     </div>
 
-    <button id="ui-toggle-btn" class="glass-panel">
-        <svg id="ui-toggle-icon" class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-        <span>言葉を紡ぐ</span>
-    </button>
-
-    <div id="ui-bottom" class="glass-panel rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+    <div id="ui-bottom" class="glass-panel rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]" onpointerdown="event.stopPropagation()">
         <div class="flex gap-2 mb-1">
             <input type="text" id="word-input" placeholder="思考を入力..." class="flex-1 bg-gray-800 border border-gray-600 text-white rounded-lg p-2 focus:outline-none focus:border-blue-500">
             <button id="btn-generate" class="btn bg-blue-600 text-white font-bold rounded-lg px-4">出す</button>
@@ -58,25 +68,31 @@
         </div>
         
         <div class="flex gap-2">
-            <button id="btn-mode-move" class="btn mode-active flex-1 border border-gray-600 bg-gray-700 text-sm py-2 rounded-lg font-bold"><span id="txt-mode-move">移動(手元)</span><span class="long-press-hint">タップで切替</span></button>
-            <button id="btn-mode-connect" class="btn flex-1 border border-gray-600 bg-gray-700 text-sm py-2 rounded-lg font-bold"><span id="txt-mode-connect">繋ぐ(1回)</span><span class="long-press-hint">タップで切替</span></button>
+            <button id="btn-mode-move" class="btn mode-active flex-1 border border-gray-600 bg-gray-700 text-sm py-2 rounded-lg font-bold">
+                <span id="txt-mode-move">移動</span>
+                <span class="long-press-hint">タップで持ち運び</span>
+            </button>
+            <button id="btn-mode-connect" class="btn flex-1 border border-gray-600 bg-gray-700 text-sm py-2 rounded-lg font-bold"><span id="txt-mode-connect">繋ぐ</span></button>
         </div>
         
         <div class="flex justify-between gap-2 mt-1">
-            <button id="btn-group" class="btn flex-1 border border-purple-500 text-purple-400 bg-purple-900 bg-opacity-20 text-sm font-bold py-2 rounded-lg"><span id="txt-mode-group">囲う(複数)</span></button>
-            <button id="btn-delete" class="btn flex-1 border border-red-500 text-red-400 bg-red-900 bg-opacity-20 text-sm font-bold py-2 rounded-lg"><span id="txt-mode-delete">消す(選択)</span><span class="long-press-hint">タップで切替</span></button>
+            <button id="btn-group" class="btn flex-1 border border-purple-500 text-purple-400 bg-purple-900 bg-opacity-20 text-sm font-bold py-2 rounded-lg"><span id="txt-mode-group">複数選択</span></button>
+            <button id="btn-delete" class="btn flex-1 border border-red-500 text-red-400 bg-red-900 bg-opacity-20 text-sm font-bold py-2 rounded-lg"><span id="txt-mode-delete">消す</span></button>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 1. Scene & Camera Rig Setup
-        // ==========================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x0f172a, 0.025);
-        const playerRig = new THREE.Group(); playerRig.position.set(0, 0, 10); scene.add(playerRig);
+        
+        const playerRig = new THREE.Group(); 
+        playerRig.position.set(0, 0, 10); 
+        scene.add(playerRig);
+        
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 1.6, 0); camera.rotation.order = 'YXZ'; playerRig.add(camera);
+        camera.position.set(0, 1.6, 0); 
+        camera.rotation.order = 'YXZ'; 
+        playerRig.add(camera);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -84,122 +100,71 @@
         renderer.xr.enabled = true;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        import('https://unpkg.com/three@0.128.0/examples/jsm/webxr/VRButton.js')
-            .then(({ VRButton }) => document.body.appendChild(VRButton.createButton(renderer)));
+        import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/VRButton.js')
+            .then(({ VRButton }) => {
+                const btn = VRButton.createButton(renderer);
+                document.getElementById('bottom-buttons-container').appendChild(btn);
+                
+                const observer = new MutationObserver(() => {
+                    if (btn.textContent.includes('NOT SUPPORTED') || btn.textContent.includes('WEBXR')) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.style.display = 'block';
+                    }
+                });
+                observer.observe(btn, { childList: true, characterData: true, subtree: true });
+            });
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.9));
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(5, 10, 5); scene.add(dirLight);
         scene.add(new THREE.GridHelper(40, 40, 0x3b82f6, 0x1e293b));
 
-        // ==========================================
-        // 2. State & Data
-        // ==========================================
+        // 🚨 State: moveSubModeを追加
         let objects = [], connections = [], historyStack = [];
         let selectedObjects = [], connectStartObj = null;
-        let currentMode = 'move', moveSubMode = 'snap', connectSubMode = 'once', deleteSubMode = 'selected';
+        let currentMode = 'move';
+        
+        let heldObject = null, isHoldingObject = false;
+        let carryingObject = null; // タップして持ち運び中のオブジェクト
+        let isLooking = false, lastLookX = 0, lastLookY = 0;
         let draggedConnection = null, draggedConnectionEnd = null, draggedConnectionOriginalNode = null;
         const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        const dragOffset = new THREE.Vector3();
+        let joyMove = new THREE.Vector2(0, 0);
 
-        // ==========================================
-        // 3. Input Manager (デバイス抽象化)
-        // ==========================================
-        const InputManager = {
-            isVR: false, move: new THREE.Vector2(), look: new THREE.Vector2(),
-            actions: { grabDown: false, grabHeld: false, grabUp: false, uiModeToggle: false },
-            getRaycaster: function(raycaster) {
-                if (this.isVR && VRState.rightController) {
-                    const tempMatrix = new THREE.Matrix4(); tempMatrix.identity().extractRotation(VRState.rightController.matrixWorld);
-                    raycaster.ray.origin.setFromMatrixPosition(VRState.rightController.matrixWorld);
-                    raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-                } else { raycaster.setFromCamera({ x: 0, y: 0 }, camera); }
-                return raycaster;
-            },
-            resetFrame: function() { this.actions.grabDown = false; this.actions.grabUp = false; this.actions.uiModeToggle = false; }
-        };
-
-        // --- VR Input & Palette ---
-        const VRState = { rightController: renderer.xr.getController(0), leftController: renderer.xr.getController(1) };
-        playerRig.add(VRState.rightController); playerRig.add(VRState.leftController);
-        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
-        VRState.rightController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
-        VRState.leftController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
-
-        VRState.rightController.addEventListener('selectstart', () => { InputManager.actions.grabDown = true; InputManager.actions.grabHeld = true; });
-        VRState.rightController.addEventListener('selectend', () => { InputManager.actions.grabUp = true; InputManager.actions.grabHeld = false; });
-        renderer.xr.addEventListener('sessionstart', () => { InputManager.isVR = true; document.body.classList.add('is-vr'); camera.position.set(0,0,0); });
-        renderer.xr.addEventListener('sessionend', () => { InputManager.isVR = false; document.body.classList.remove('is-vr'); camera.position.set(0,1.6,0); });
-
-        // パレットメニュー
-        let currentVrUiMode = 'palette'; 
-        const paletteGroup = new THREE.Group();
-        paletteGroup.position.set(0, 0.1, -0.1); paletteGroup.rotation.x = -Math.PI/4; paletteGroup.rotation.y = Math.PI/6;
-        function createVrBtn(txt, y, id) {
-            const cvs = document.createElement('canvas'); cvs.width=256; cvs.height=64; const ctx = cvs.getContext('2d');
-            ctx.fillStyle='#1e293b'; ctx.beginPath(); ctx.roundRect(0,0,256,64,15); ctx.fill(); ctx.strokeStyle='#3b82f6'; ctx.lineWidth=4; ctx.stroke();
-            ctx.fillStyle='#fff'; ctx.font='bold 32px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt, 128, 32);
-            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.04), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(cvs)}));
-            mesh.position.y = y; mesh.userData = { isVrButton: true, actionId: id }; return mesh;
-        }
-        const vrButtons = [ createVrBtn("✋ 移動", 0.06, 'move'), createVrBtn("🔗 繋ぐ", 0.0, 'connect'), createVrBtn("🗑️ 消す", -0.06, 'delete'), createVrBtn("➕ 生成", -0.12, 'add'), createVrBtn("🔄 UI切替", -0.18, 'toggle_ui') ];
-        vrButtons.forEach(b => paletteGroup.add(b)); VRState.leftController.add(paletteGroup);
-
-        function handleVrAction(id) {
-            if(id==='move') setMode('move', moveSubMode==='snap'?'keep':'snap'); // VRでもサブモードをトグル
-            else if(id==='connect') setMode('connect', connectSubMode==='once'?'continuous':'once');
-            else if(id==='delete') setMode('delete', deleteSubMode==='selected'?'continuous':'selected');
-            else if(id==='add') { const presets=["アイデア","課題","ユーザー"]; spawnNameTag(presets[Math.floor(Math.random()*presets.length)], 1, new THREE.Vector3(0,0,-1).applyMatrix4(camera.matrixWorld)); }
-            else if(id==='toggle_ui') { currentVrUiMode = currentVrUiMode==='palette'?'shortcut':'palette'; paletteGroup.visible = (currentVrUiMode==='palette'); }
-        }
-
-        // --- Mobile Input & UI ---
-        const actionBtn = document.getElementById('action-btn');
-        actionBtn.addEventListener('touchstart', (e) => { e.preventDefault(); InputManager.actions.grabDown = true; InputManager.actions.grabHeld = true; actionBtn.style.transform = 'scale(0.9)'; });
-        actionBtn.addEventListener('touchend', (e) => { e.preventDefault(); InputManager.actions.grabUp = true; InputManager.actions.grabHeld = false; actionBtn.style.transform = 'scale(1)'; });
-
-        // ジョイスティック＆スワイプ
-        const joyZone = document.getElementById('joystick-zone'), joyKnob = document.getElementById('joystick-knob');
-        let joyTouchId = null, joyCenter = {x:0, y:0}, lookTouchId = null, touchStartPos = {x:0, y:0};
-        joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); const t = e.changedTouches[0]; joyTouchId = t.identifier; const rect = joyZone.getBoundingClientRect(); joyCenter = {x: rect.left+rect.width/2, y: rect.top+rect.height/2}; updateJoy(t); });
-        joyZone.addEventListener('touchmove', (e) => { e.preventDefault(); e.stopPropagation(); for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === joyTouchId) updateJoy(e.changedTouches[i]); });
-        joyZone.addEventListener('touchend', () => { joyTouchId = null; InputManager.move.set(0, 0); joyKnob.style.transform = `translate(0px, 0px)`; });
-        function updateJoy(t) { const dx = t.clientX - joyCenter.x, dy = t.clientY - joyCenter.y, dist = Math.min(35, Math.sqrt(dx*dx+dy*dy)), ang = Math.atan2(dy, dx), kX = dist*Math.cos(ang), kY = dist*Math.sin(ang); joyKnob.style.transform = `translate(${kX}px, ${kY}px)`; InputManager.move.set(kX/35, kY/35); }
-
-        renderer.domElement.addEventListener('touchstart', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier !== joyTouchId && lookTouchId === null) { lookTouchId = e.changedTouches[i].identifier; touchStartPos = {x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY}; } } });
-        renderer.domElement.addEventListener('touchmove', (e) => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier === lookTouchId) { const dx = e.changedTouches[i].clientX - touchStartPos.x, dy = e.changedTouches[i].clientY - touchStartPos.y; InputManager.look.x -= dx*0.005; InputManager.look.y -= dy*0.005; InputManager.look.y = Math.max(-Math.PI/2, Math.min(Math.PI/2, InputManager.look.y)); touchStartPos = {x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY}; } } });
-        renderer.domElement.addEventListener('touchend', (e) => { for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === lookTouchId) lookTouchId = null; });
-
-        // UI表示切替
-        let uiVisible = false;
-        document.getElementById('ui-toggle-btn').addEventListener('click', () => {
-            uiVisible = !uiVisible;
-            document.getElementById('ui-bottom').classList.toggle('show'); document.getElementById('ui-toggle-btn').classList.toggle('ui-open');
-            document.getElementById('joystick-zone').style.opacity = uiVisible ? '0.3' : '1'; document.getElementById('joystick-zone').style.pointerEvents = uiVisible ? 'none' : 'auto';
-            document.querySelector('#ui-toggle-btn span').textContent = uiVisible ? '閉じる' : '言葉を紡ぐ';
-        });
-
-        // ==========================================
-        // 4. Core Features (生成・削除・Undo)
-        // ==========================================
+        // Node Spawn
         function spawnNameTag(word, scale=1, pos=null) {
             const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d'); ctx.font = 'bold 72px sans-serif'; const textW = ctx.measureText(word).width;
             const w = Math.max(250, textW + 100), h=160; cvs.width=w; cvs.height=h;
             ctx.fillStyle='#'+color.getHexString(); ctx.beginPath(); ctx.roundRect(0,0,w,h,30); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=8; ctx.stroke();
             ctx.fillStyle='#fff'; ctx.font='bold 72px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(word, w/2, h/2);
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(3*(w/h), 3, 0.2), [null,null,null,null,new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(cvs), roughness:0.4}),null]);
-            mesh.material.forEach(m => { if(m) m.emissive = new THREE.Color(0x000000); });
-            mesh.position.copy(pos || playerRig.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3))); mesh.position.y = Math.max(mesh.position.y, 1);
-            mesh.userData = { isNode: true, baseScale: scale, targetScale: scale }; scene.add(mesh); objects.push(mesh);
+            
+            const baseMat = new THREE.MeshStandardMaterial({color: color});
+            const faceMat = new THREE.MeshStandardMaterial({map: new THREE.CanvasTexture(cvs), roughness: 0.4});
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(3*(w/h), 3, 0.2), [baseMat, baseMat, baseMat, baseMat, faceMat, baseMat]);
+            
+            const spawnPos = pos || playerRig.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3));
+            spawnPos.y = Math.max(spawnPos.y, 1);
+            mesh.position.copy(spawnPos);
+            mesh.userData = { isNode: true, baseScale: scale, targetScale: scale }; 
+            scene.add(mesh); objects.push(mesh);
+            
             mesh.scale.set(0,0,0); let s=0; const anim=()=>{s+=0.2; if(s<=scale){mesh.scale.setScalar(s); requestAnimationFrame(anim);}else mesh.scale.setScalar(scale);}; anim();
             return mesh;
         }
 
         document.getElementById('btn-generate').addEventListener('click', () => {
             const input = document.getElementById('word-input'); const val = input.value.trim(); const words = val ? val.split(',').map(w=>w.trim()).filter(w=>w) : ['概念'];
-            const created = words.map((w,i) => { const p = playerRig.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(4)); p.x += (i - (words.length-1)/2)*2; p.y = 1.5; return spawnNameTag(w, 1, p); });
+            const created = words.map((w,i) => { 
+                const p = playerRig.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(4)); 
+                p.x += (i - (words.length-1)/2)*2.5; p.y = 1.5; 
+                return spawnNameTag(w, 1, p); 
+            });
             pushHistory({type:'add', objects:created}); input.value='';
         });
 
+        // Connection
         function createConnection(A, B) {
             if(connections.some(c=>(c.objA===A&&c.objB===B)||(c.objB===A&&c.objA===B))) return;
             const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1, 8).rotateX(Math.PI/2), new THREE.MeshBasicMaterial({color:0x4ade80, transparent:true, opacity:0.8}));
@@ -207,27 +172,44 @@
             mesh.userData = { isConnection: true, connObj: conn }; scene.add(mesh); objects.push(mesh); connections.push(conn);
             updateConnections(); pushHistory({type:'connect', conn:conn});
         }
+
         function updateConnections() {
             connections.forEach(c => {
                 const pA = new THREE.Vector3(), pB = new THREE.Vector3();
-                c.objA ? c.objA.getWorldPosition(pA) : pA.copy(c.floatA); c.objB ? c.objB.getWorldPosition(pB) : pB.copy(c.floatB);
-                const dist = pA.distanceTo(pB); if(dist>0.001) { c.mesh.scale.set(1,1,dist); c.mesh.position.copy(pA).add(pB).multiplyScalar(0.5); c.mesh.lookAt(pB); }
+                c.objA ? c.objA.getWorldPosition(pA) : pA.copy(c.floatA); 
+                c.objB ? c.objB.getWorldPosition(pB) : pB.copy(c.floatB);
+                const dist = pA.distanceTo(pB); 
+                if(dist>0.001) { c.mesh.scale.set(1,1,dist); c.mesh.position.copy(pA).add(pB).multiplyScalar(0.5); c.mesh.lookAt(pB); }
             });
         }
 
+        // Delete & Group & Undo
         function executeDelete(targets) {
             if (!targets.length) return; const dObjs=[], dConns=[];
             for(let i=targets.length-1; i>=0; i--) {
                 const o = targets[i];
                 if(o.userData.isConnection) { dConns.push(o.userData.connObj); scene.remove(o); connections.splice(connections.indexOf(o.userData.connObj),1); objects.splice(objects.indexOf(o),1); }
-                else if(o.userData.isGroup) { const children=[]; o.children.forEach(c=>{if(c.userData) children.push(c);}); children.forEach(c=>{ scene.attach(c); objects.push(c); }); scene.remove(o); objects.splice(objects.indexOf(o),1); } 
+                else if(o.userData.isGroup) { o.children.forEach(c=>{if(c.userData){ scene.attach(c); objects.push(c); }}); scene.remove(o); objects.splice(objects.indexOf(o),1); } 
                 else { dObjs.push(o); for(let j=connections.length-1; j>=0; j--) { let hit=false; o.traverse(c=>{if(connections[j].objA===c||connections[j].objB===c)hit=true;}); if(hit) { dConns.push(connections[j]); scene.remove(connections[j].mesh); objects.splice(objects.indexOf(connections[j].mesh),1); connections.splice(j,1); } } scene.remove(o); objects.splice(objects.indexOf(o),1); }
             }
             if(dObjs.length||dConns.length) pushHistory({type:'delete', objects:dObjs, connections:dConns});
         }
 
+        function executeGroup() {
+            const tgts = selectedObjects.filter(o => !o.userData.isConnection); 
+            if(tgts.length < 2) { updateSelection(null); return; }
+            const box = new THREE.Box3(); tgts.forEach(o => box.union(new THREE.Box3().setFromObject(o))); box.expandByScalar(0.5); 
+            const c = new THREE.Vector3(), s = new THREE.Vector3(); box.getCenter(c); box.getSize(s);
+            const group = new THREE.Group(); group.position.copy(c); 
+            group.add(new THREE.Mesh(new THREE.BoxGeometry(s.x,s.y,s.z), new THREE.MeshStandardMaterial({color:0xa855f7, transparent:true, opacity:0.15, depthWrite:false, side:THREE.DoubleSide}))); 
+            group.quaternion.copy(camera.quaternion);
+            tgts.forEach(o => { group.attach(o); objects.splice(objects.indexOf(o),1); }); 
+            group.userData = {isGroup:true, baseScale:1, targetScale:1}; scene.add(group); objects.push(group); 
+            updateSelection(null); updateSelection(group);
+        }
+
         function pushHistory(cmd) { historyStack.push(cmd); if(historyStack.length>20) historyStack.shift(); document.getElementById('btn-undo').disabled = false; }
-        document.getElementById('btn-undo').addEventListener('click', () => {
+        function executeUndo() {
             if(!historyStack.length) return; const cmd = historyStack.pop();
             if(cmd.type === 'add') cmd.objects.forEach(o => { scene.remove(o); objects.splice(objects.indexOf(o),1); });
             if(cmd.type === 'delete') { cmd.objects.forEach(o => { scene.add(o); objects.push(o); }); cmd.connections.forEach(c => { scene.add(c.mesh); objects.push(c.mesh); connections.push(c); }); }
@@ -235,9 +217,10 @@
             if(cmd.type === 'connect') { scene.remove(cmd.conn.mesh); objects.splice(objects.indexOf(cmd.conn.mesh), 1); connections = connections.filter(c=>c!==cmd.conn); }
             if(cmd.type === 'reconnect') { if(cmd.end==='A') cmd.conn.objA=cmd.oldNode; else cmd.conn.objB=cmd.oldNode; }
             updateSelection(null); updateConnections(); if(!historyStack.length) document.getElementById('btn-undo').disabled = true;
-        });
+        }
+        document.getElementById('btn-undo').addEventListener('click', executeUndo);
 
-        // --- Selection & Modes ---
+        // Selection & Modes
         function setEmissive(mesh, hex) { if(mesh.material) { if(Array.isArray(mesh.material)) mesh.material.forEach(m => { if(m&&m.emissive)m.emissive.setHex(hex); }); else if(mesh.material.emissive) mesh.material.emissive.setHex(hex); } }
         function updateSelection(mesh) {
             const isMulti = document.getElementById('btn-group').classList.contains('active-group-mode');
@@ -245,143 +228,330 @@
             if(mesh) { const idx = selectedObjects.indexOf(mesh); if(idx>-1) { if(mesh.userData.baseScale) mesh.userData.targetScale=mesh.userData.baseScale; if(mesh.userData.isConnection) mesh.material.color.setHex(0x4ade80); else setEmissive(mesh, 0x000000); selectedObjects.splice(idx,1); } else { selectedObjects.push(mesh); if(mesh.userData.baseScale) mesh.userData.targetScale=mesh.userData.baseScale*1.1; if(mesh.userData.isConnection) mesh.material.color.setHex(0xffaa00); else setEmissive(mesh, 0x333333); } }
         }
 
-        function setMode(mode, subMode=null) {
-            if(mode==='move') { currentMode='move'; moveSubMode = subMode || (moveSubMode==='snap'?'keep':'snap'); }
-            if(mode==='connect') { currentMode='connect'; connectSubMode = subMode || (connectSubMode==='once'?'continuous':'once'); }
-            if(mode==='delete') { currentMode='delete'; deleteSubMode = subMode || (deleteSubMode==='selected'?'continuous':'selected'); }
+        function setMode(mode) {
+            currentMode = mode;
             document.querySelectorAll('#ui-bottom .btn').forEach(b => b.classList.remove('mode-active', 'mode-delete-active'));
-            if(currentMode==='move') { document.getElementById('btn-mode-move').classList.add('mode-active'); document.getElementById('txt-mode-move').textContent = moveSubMode==='snap'?'移動(手元)':'移動(遠隔)'; document.getElementById('crosshair').style.backgroundColor = 'rgba(255,255,255,0.9)'; }
-            else if(currentMode==='connect') { document.getElementById('btn-mode-connect').classList.add('mode-active'); document.getElementById('txt-mode-connect').textContent = connectSubMode==='once'?'繋ぐ(1回)':'繋ぐ(連続)'; document.getElementById('crosshair').style.backgroundColor = 'rgba(16,185,129,0.9)'; }
-            else if(currentMode==='delete') { document.getElementById('btn-delete').classList.add('mode-delete-active'); document.getElementById('txt-mode-delete').textContent = deleteSubMode==='selected'?'消す(選択)':'消す(連続)'; document.getElementById('crosshair').style.backgroundColor = 'rgba(239,68,68,0.9)'; }
+            if(currentMode==='move') document.getElementById('btn-mode-move').classList.add('mode-active');
+            else if(currentMode==='connect') document.getElementById('btn-mode-connect').classList.add('mode-active');
+            else if(currentMode==='delete') document.getElementById('btn-delete').classList.add('mode-delete-active');
             if(connectStartObj) { setEmissive(connectStartObj, 0x000000); connectStartObj=null; }
         }
 
         document.getElementById('btn-mode-move').addEventListener('click', () => setMode('move'));
         document.getElementById('btn-mode-connect').addEventListener('click', () => setMode('connect'));
-        document.getElementById('btn-delete').addEventListener('click', () => { if(deleteSubMode==='selected' && selectedObjects.length>0) { executeDelete(selectedObjects); updateSelection(null); } else setMode('delete'); });
         
-        document.getElementById('btn-group').addEventListener('click', function() {
-            this.classList.toggle('active-group-mode');
-            if(this.classList.contains('active-group-mode')) { this.classList.replace('bg-purple-900', 'bg-purple-600'); this.classList.replace('text-purple-400', 'text-white'); document.getElementById('txt-mode-group').textContent = '囲う(確定)'; return; }
-            this.classList.replace('bg-purple-600', 'bg-purple-900'); this.classList.replace('text-white', 'text-purple-400'); document.getElementById('txt-mode-group').textContent = '囲う(複数)';
-            const tgts = selectedObjects.filter(o => !o.userData.isConnection); if(tgts.length<2) { updateSelection(null); return; }
-            const box = new THREE.Box3(); tgts.forEach(o => box.union(new THREE.Box3().setFromObject(o))); box.expandByScalar(0.5); const c = new THREE.Vector3(), s = new THREE.Vector3(); box.getCenter(c); box.getSize(s);
-            const group = new THREE.Group(); group.position.copy(c); group.add(new THREE.Mesh(new THREE.BoxGeometry(s.x,s.y,s.z), new THREE.MeshStandardMaterial({color:0xa855f7, transparent:true, opacity:0.15, depthWrite:false, side:THREE.DoubleSide}))); group.quaternion.copy(camera.quaternion);
-            tgts.forEach(o => { group.attach(o); objects.splice(objects.indexOf(o),1); }); group.userData = {isGroup:true, baseScale:1, targetScale:1}; scene.add(group); objects.push(group); updateSelection(null); updateSelection(group);
+        document.getElementById('btn-delete').addEventListener('click', () => { 
+            const btnGroup = document.getElementById('btn-group');
+            if(btnGroup.classList.contains('active-group-mode')) {
+                if (selectedObjects.length > 0) { executeDelete(selectedObjects); updateSelection(null); }
+                btnGroup.click(); 
+            } else { setMode('delete'); } 
         });
 
-        // ==========================================
-        // 5. Main Animation Loop
-        // ==========================================
+        document.getElementById('btn-group').addEventListener('click', function() {
+            this.classList.toggle('active-group-mode');
+            if(this.classList.contains('active-group-mode')) { 
+                this.classList.replace('bg-purple-900', 'bg-purple-600'); this.classList.replace('text-purple-400', 'text-white'); 
+                document.getElementById('txt-mode-group').textContent = '囲う(確定)'; 
+                setMode('move');
+            } else {
+                this.classList.replace('bg-purple-600', 'bg-purple-900'); this.classList.replace('text-white', 'text-purple-400'); 
+                document.getElementById('txt-mode-group').textContent = '複数選択'; 
+                executeGroup();
+            }
+        });
+
+        // Touch Interaction
         const raycaster = new THREE.Raycaster(); raycaster.params.Line.threshold = 0.5;
-        let heldObject = null;
+
+        let uiVisible = false;
+        document.getElementById('ui-toggle-btn').addEventListener('click', () => {
+            uiVisible = !uiVisible;
+            document.body.classList.toggle('ui-open', uiVisible);
+            document.getElementById('ui-bottom').classList.toggle('show'); 
+            document.getElementById('joystick-zone').style.opacity = uiVisible ? '0.3' : '1'; 
+            document.getElementById('joystick-zone').style.pointerEvents = uiVisible ? 'none' : 'auto';
+            document.querySelector('#ui-toggle-btn span').textContent = uiVisible ? '閉じる' : '言葉を紡ぐ';
+        });
+
+        const joyZone = document.getElementById('joystick-zone'), joyKnob = document.getElementById('joystick-knob');
+        let joyTouchId = null, joyCenter = {x:0, y:0};
+        joyZone.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); joyTouchId = e.pointerId; const rect = joyZone.getBoundingClientRect(); joyCenter = {x: rect.left+rect.width/2, y: rect.top+rect.height/2}; updateJoy(e); });
+        window.addEventListener('pointermove', (e) => { if(e.pointerId === joyTouchId) updateJoy(e); });
+        window.addEventListener('pointerup', (e) => { if(e.pointerId === joyTouchId) { joyTouchId = null; joyMove.set(0, 0); joyKnob.style.transform = `translate(0px, 0px)`; }});
+        function updateJoy(t) { const dx = t.clientX - joyCenter.x, dy = t.clientY - joyCenter.y, dist = Math.min(35, Math.sqrt(dx*dx+dy*dy)), ang = Math.atan2(dy, dx), kX = dist*Math.cos(ang), kY = dist*Math.sin(ang); joyKnob.style.transform = `translate(${kX}px, ${kY}px)`; joyMove.set(kX/35, kY/35); }
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            if(renderer.xr.isPresenting) return;
+            e.preventDefault();
+            
+            const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(mouse, camera);
+
+            // 🚨 追加: キャリー中（持ち運び中）のオブジェクトがある場合は、タップで配置して終了
+            if (carryingObject) {
+                if(carryingObject.userData.baseScale) carryingObject.userData.targetScale = carryingObject.userData.baseScale;
+                if(carryingObject.position.distanceTo(carryingObject.userData.startPos) > 0.01) {
+                    pushHistory({type:'move', moves:[{obj:carryingObject, oldPos:carryingObject.userData.startPos.clone()}]});
+                }
+                carryingObject = null;
+                isLooking = true; // そのままスワイプで視点移動できるようにする
+                lastLookX = e.clientX; lastLookY = e.clientY;
+                return;
+            }
+
+            const hits = raycaster.intersectObjects(objects, true);
+
+            if(hits.length > 0) {
+                let target = hits[0].object; if(target.parent && target.parent.userData.isGroup) target = target.parent;
+                
+                if (currentMode === 'move') {
+                    if (target.userData.isConnection) {
+                        const conn = target.userData.connObj; const pA = new THREE.Vector3(); conn.objA.getWorldPosition(pA); const pB = new THREE.Vector3(); conn.objB.getWorldPosition(pB);
+                        draggedConnection = conn; 
+                        const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
+                        dragPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hits[0].point);
+                        if(hits[0].point.distanceTo(pA) < hits[0].point.distanceTo(pB)) { draggedConnectionEnd = 'A'; draggedConnectionOriginalNode = conn.objA; conn.objA = null; conn.floatA.copy(hits[0].point); }
+                        else { draggedConnectionEnd = 'B'; draggedConnectionOriginalNode = conn.objB; conn.objB = null; conn.floatB.copy(hits[0].point); }
+                    } else {
+                        // ドラッグとタップの両方を待ち受ける
+                        isHoldingObject = true; heldObject = target; heldObject.userData.startPos = heldObject.position.clone(); heldObject.userData.isDragged = false; 
+                        const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir);
+                        dragPlane.setFromNormalAndCoplanarPoint(camDir.negate(), hits[0].point);
+                        dragOffset.copy(heldObject.position).sub(hits[0].point);
+                        if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale * 1.2;
+                        if(navigator.vibrate) navigator.vibrate(50);
+                    }
+                } else if (currentMode === 'connect' && !target.userData.isConnection) {
+                    if (!connectStartObj) { connectStartObj = target; setEmissive(target, 0x333333); }
+                    else if (connectStartObj === target) { setEmissive(target, 0x000000); connectStartObj = null; }
+                    else { createConnection(connectStartObj, target); setEmissive(connectStartObj, 0x000000); connectStartObj = null; }
+                } else if (currentMode === 'delete') {
+                    executeDelete([target]);
+                }
+            } else {
+                updateSelection(null); if(connectStartObj){ setEmissive(connectStartObj, 0x000000); connectStartObj=null; }
+                if(['move', 'connect', 'delete'].includes(currentMode)) { isLooking = true; }
+            }
+            lastLookX = e.clientX; lastLookY = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('pointermove', (e) => {
+            if(renderer.xr.isPresenting) return;
+            e.preventDefault();
+
+            if (isHoldingObject && heldObject) {
+                const dx = e.clientX - lastLookX, dy = e.clientY - lastLookY;
+                if(Math.sqrt(dx*dx + dy*dy) > 5) heldObject.userData.isDragged = true;
+
+                const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+                raycaster.setFromCamera(mouse, camera); const targetPt = new THREE.Vector3(); 
+                if(raycaster.ray.intersectPlane(dragPlane, targetPt)) { heldObject.position.copy(targetPt).add(dragOffset); }
+            } else if (isLooking || carryingObject) {
+                // 🚨 修正: キャリー中（手元モード）もスワイプで自由に視点移動させる
+                const dx = e.clientX - lastLookX, dy = e.clientY - lastLookY;
+                camera.rotation.y -= dx * 0.005; camera.rotation.x -= dy * 0.005;
+                camera.rotation.x = Math.max(-Math.PI/2+0.1, Math.min(Math.PI/2-0.1, camera.rotation.x));
+                lastLookX = e.clientX; lastLookY = e.clientY;
+            } else if (draggedConnection) {
+                const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+                raycaster.setFromCamera(mouse, camera); const targetPt = new THREE.Vector3(); 
+                if(raycaster.ray.intersectPlane(dragPlane, targetPt)) { if(draggedConnectionEnd==='A') draggedConnection.floatA.copy(targetPt); else draggedConnection.floatB.copy(targetPt); }
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if(renderer.xr.isPresenting) return;
+            isLooking = false;
+
+            if (isHoldingObject) {
+                isHoldingObject = false;
+                if(heldObject) {
+                    if(!heldObject.userData.isDragged) {
+                        // タップされた場合
+                        if (document.getElementById('btn-group').classList.contains('active-group-mode')) {
+                            // 複数選択モードなら選択をトグル
+                            if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale;
+                            updateSelection(heldObject);
+                            heldObject = null;
+                        } else {
+                            // 通常の移動モードなら、キャリー状態（持ち運び）に移行
+                            carryingObject = heldObject;
+                            // 🚨 修正: カメラからの相対位置を計算して保存（視界を塞がないようにそのままの位置関係を維持）
+                            carryingObject.userData.localOffset = carryingObject.position.clone().applyMatrix4(camera.matrixWorldInverse);
+                            heldObject = null;
+                            isLooking = true; // そのまま視点移動できるようにする
+                        }
+                    } else {
+                        // ドラッグして離した場合
+                        if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale;
+                        if(heldObject.position.distanceTo(heldObject.userData.startPos) > 0.01) { 
+                            pushHistory({type:'move', moves:[{obj:heldObject, oldPos:heldObject.userData.startPos.clone()}]}); 
+                        }
+                        heldObject = null;
+                    }
+                }
+            }
+
+            if (draggedConnection) {
+                const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+                raycaster.setFromCamera(mouse, camera); const hits = raycaster.intersectObjects(objects, true); let newTarget = null;
+                for(let i=0; i<hits.length; i++) { let h = hits[i].object; if(h.parent && h.parent.userData.isGroup) h = h.parent; if(!h.userData.isConnection && (h.userData.isNode || h.userData.isGroup)) { newTarget=h; break; } }
+                if(newTarget) { if(draggedConnectionEnd==='A') draggedConnection.objA=newTarget; else draggedConnection.objB=newTarget; pushHistory({type:'reconnect', conn:draggedConnection, end:draggedConnectionEnd, oldNode:draggedConnectionOriginalNode}); }
+                else { if(draggedConnectionEnd==='A') draggedConnection.objA=draggedConnectionOriginalNode; else draggedConnection.objB=draggedConnectionOriginalNode; }
+                draggedConnection = null;
+            }
+        });
+
+        // VR Interaction
+        const VRState = { rightController: renderer.xr.getController(0), leftController: renderer.xr.getController(1) };
+        playerRig.add(VRState.rightController); playerRig.add(VRState.leftController);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+        VRState.rightController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
+        VRState.leftController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
+
+        let currentVrUiMode = 'palette'; 
+        const paletteGroup = new THREE.Group();
+        paletteGroup.position.set(0, 0.1, -0.1); paletteGroup.rotation.x = -Math.PI/4; paletteGroup.rotation.y = Math.PI/6;
+        function createVrBtn(txt, y, id, color='#1e293b', border='#3b82f6') {
+            const cvs = document.createElement('canvas'); cvs.width=256; cvs.height=64; const ctx = cvs.getContext('2d');
+            ctx.fillStyle=color; ctx.beginPath(); ctx.roundRect(0,0,256,64,15); ctx.fill(); ctx.strokeStyle=border; ctx.lineWidth=4; ctx.stroke();
+            ctx.fillStyle='#fff'; ctx.font='bold 28px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt, 128, 32);
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.04), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(cvs)}));
+            mesh.position.y = y; mesh.userData = { isVrButton: true, actionId: id }; return mesh;
+        }
+        
+        const vrButtons = [ 
+            createVrBtn("✋ 移動", 0.18, 'move'), createVrBtn("🔗 繋ぐ", 0.12, 'connect'), createVrBtn("🗑️ 消す", 0.06, 'delete', '#450a0a', '#ef4444'), 
+            createVrBtn("📦 複数選択/囲う", 0.0, 'group', '#3b0764', '#a855f7'), createVrBtn("➕ 単語生成", -0.06, 'add'), 
+            createVrBtn("↩️ 元に戻す", -0.12, 'undo', '#334155', '#94a3b8'), createVrBtn("🔄 UI非表示", -0.18, 'toggle_ui') 
+        ];
+        vrButtons.forEach(b => paletteGroup.add(b)); VRState.leftController.add(paletteGroup);
+
+        function handleVrAction(id) {
+            if(id==='move') setMode('move');
+            else if(id==='connect') setMode('connect');
+            else if(id==='delete') {
+                const btnGroup = document.getElementById('btn-group');
+                if(btnGroup.classList.contains('active-group-mode')) {
+                    if(selectedObjects.length>0) { executeDelete(selectedObjects); updateSelection(null); }
+                    btnGroup.click();
+                } else setMode('delete');
+            }
+            else if(id==='group') document.getElementById('btn-group').click();
+            else if(id==='undo') executeUndo();
+            else if(id==='add') { const presets=["VRの世界","直感操作","未来","アイデア","無限"]; spawnNameTag(presets[Math.floor(Math.random()*presets.length)], 1, new THREE.Vector3(0,0,-1).applyMatrix4(camera.matrixWorld)); }
+            else if(id==='toggle_ui') { currentVrUiMode = currentVrUiMode==='palette'?'shortcut':'palette'; paletteGroup.visible = (currentVrUiMode==='palette'); }
+        }
+
+        let vrHeldObject = null;
+
+        VRState.rightController.addEventListener('selectstart', (e) => {
+            const controller = e.target;
+            const tempMatrix = new THREE.Matrix4(); tempMatrix.identity().extractRotation(controller.matrixWorld);
+            raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld); raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+            if (currentVrUiMode === 'palette') {
+                const uiHits = raycaster.intersectObjects(vrButtons);
+                if(uiHits.length > 0) { const b = uiHits[0].object; handleVrAction(b.userData.actionId); b.scale.setScalar(0.9); setTimeout(()=>b.scale.setScalar(1), 150); return; }
+            }
+
+            const hits = raycaster.intersectObjects(objects, true);
+            if(hits.length > 0) {
+                let target = hits[0].object; if(target.parent && target.parent.userData.isGroup) target = target.parent;
+                
+                if (currentMode === 'move') {
+                    if(!target.userData.isConnection) {
+                        vrHeldObject = target; vrHeldObject.userData.startPos = vrHeldObject.position.clone(); controller.attach(vrHeldObject); 
+                        if(vrHeldObject.userData.baseScale) vrHeldObject.userData.targetScale = vrHeldObject.userData.baseScale * 1.2;
+                    }
+                } else if (currentMode === 'connect' && !target.userData.isConnection) {
+                    if (!connectStartObj) { connectStartObj = target; setEmissive(target, 0x333333); }
+                    else if (connectStartObj === target) { setEmissive(target, 0x000000); connectStartObj = null; }
+                    else { createConnection(connectStartObj, target); setEmissive(connectStartObj, 0x000000); connectStartObj = null; }
+                } else if (currentMode === 'delete') {
+                    executeDelete([target]);
+                }
+            } else { updateSelection(null); if(connectStartObj){ setEmissive(connectStartObj, 0x000000); connectStartObj=null; } }
+        });
+
+        VRState.rightController.addEventListener('selectend', () => {
+            if (vrHeldObject) {
+                scene.attach(vrHeldObject); 
+                if(vrHeldObject.userData.baseScale) vrHeldObject.userData.targetScale = vrHeldObject.userData.baseScale;
+                if(vrHeldObject.position.distanceTo(vrHeldObject.userData.startPos) > 0.01) {
+                    pushHistory({type:'move', moves:[{obj:vrHeldObject, oldPos:vrHeldObject.userData.startPos.clone()}]});
+                } else {
+                    updateSelection(vrHeldObject); // 動かしていなければ選択
+                }
+                vrHeldObject = null;
+            }
+        });
+
+        renderer.xr.addEventListener('sessionstart', () => { document.body.classList.add('is-vr'); camera.position.set(0,0,0); });
+        renderer.xr.addEventListener('sessionend', () => { document.body.classList.remove('is-vr'); camera.position.set(0,1.6,0); });
+
+        // Animation Loop
         let prevBtns = {a:false, b:false, x:false, y:false};
 
         renderer.setAnimationLoop(() => {
             const time = Date.now() * 0.001;
 
-            // 1. 移動・VRショートカット
-            if (!InputManager.isVR) {
-                camera.rotation.set(InputManager.look.y, InputManager.look.x, 0);
+            if (!renderer.xr.isPresenting) {
                 const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
-                playerRig.position.addScaledVector(camDir, -InputManager.move.y * 0.15); playerRig.position.addScaledVector(camRight, InputManager.move.x * 0.15);
+                playerRig.position.addScaledVector(camDir, -joyMove.y * 0.15); playerRig.position.addScaledVector(camRight, joyMove.x * 0.15);
+                
+                // 🚨 修正: キャリーモードの場合はカメラとの相対的な位置関係を維持して追従
+                if (carryingObject && carryingObject.userData.localOffset) {
+                    const targetPos = carryingObject.userData.localOffset.clone();
+                    targetPos.applyMatrix4(camera.matrixWorld);
+                    carryingObject.position.lerp(targetPos, 0.2);
+                    carryingObject.quaternion.slerp(camera.quaternion, 0.2); // カメラの方を向く
+                }
             } else {
                 const session = renderer.xr.getSession();
                 if (session && currentVrUiMode === 'shortcut') {
                     for (const s of session.inputSources) {
                         if (!s.gamepad) continue;
                         const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
-                        if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) setMode('delete'); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
+                        if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
                         prevBtns = {a:bA, b:bB, x:bX, y:bY};
                     }
                 }
             }
 
-            // 2. インタラクション (Grab Down)
-            if (InputManager.actions.grabDown) {
-                InputManager.getRaycaster(raycaster);
-                let hitUi = false;
-                
-                // VRパレット判定
-                if (InputManager.isVR && currentVrUiMode === 'palette') {
-                    const uiHits = raycaster.intersectObjects(vrButtons);
-                    if(uiHits.length>0) { const b = uiHits[0].object; handleVrAction(b.userData.actionId); b.scale.setScalar(0.9); setTimeout(()=>b.scale.setScalar(1), 150); hitUi=true; }
-                }
-
-                if (!hitUi) {
-                    const hits = raycaster.intersectObjects(objects, true);
-                    if (hits.length > 0) {
-                        let target = hits[0].object; if(target.parent && target.parent.userData.isGroup) target = target.parent;
-                        
-                        if (currentMode === 'move') {
-                            if(target.userData.isConnection) {
-                                // 結線の付け替え
-                                const conn = target.userData.connObj; const pA = new THREE.Vector3(); conn.objA.getWorldPosition(pA); const pB = new THREE.Vector3(); conn.objB.getWorldPosition(pB);
-                                draggedConnection = conn; dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(dragPlane.normal), hits[0].point);
-                                if(hits[0].point.distanceTo(pA) < hits[0].point.distanceTo(pB)) { draggedConnectionEnd = 'A'; draggedConnectionOriginalNode = conn.objA; conn.objA = null; conn.floatA.copy(hits[0].point); }
-                                else { draggedConnectionEnd = 'B'; draggedConnectionOriginalNode = conn.objB; conn.objB = null; conn.floatB.copy(hits[0].point); }
-                            } else {
-                                // ノードを掴む
-                                heldObject = target; heldObject.userData.startPos = heldObject.position.clone();
-                                if(moveSubMode==='snap') heldObject.userData.localOffset = new THREE.Vector3(0,0,-4); else heldObject.userData.localOffset = heldObject.position.clone().applyMatrix4(camera.matrixWorldInverse);
-                                if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale * 1.2;
-                                if(!document.getElementById('btn-group').classList.contains('active-group-mode')) updateSelection(heldObject);
-                            }
-                        } else if (currentMode === 'connect' && !target.userData.isConnection) {
-                            if (!connectStartObj) { connectStartObj = target; setEmissive(target, 0x333333); }
-                            else if (connectStartObj === target) { setEmissive(target, 0x000000); connectStartObj = null; }
-                            else { createConnection(connectStartObj, target); setEmissive(connectStartObj, 0x000000); connectStartObj = null; if(connectSubMode==='once') setMode('move'); }
-                        } else if (currentMode === 'delete') {
-                            executeDelete([target]);
-                        }
-                    } else {
-                        updateSelection(null); if(connectStartObj){ setEmissive(connectStartObj, 0x000000); connectStartObj=null; }
-                    }
-                }
-            }
-
-            // 3. インタラクション (Grab Held)
-            if (InputManager.actions.grabHeld) {
-                if (heldObject && heldObject.userData.localOffset) {
-                    const targetPos = heldObject.userData.localOffset.clone();
-                    if(InputManager.isVR) targetPos.applyMatrix4(VRState.rightController.matrixWorld); else targetPos.applyMatrix4(camera.matrixWorld);
-                    heldObject.position.lerp(targetPos, 0.3); heldObject.quaternion.slerp(InputManager.isVR ? VRState.rightController.quaternion : camera.quaternion, 0.2);
-                }
-                if (draggedConnection) {
-                    InputManager.getRaycaster(raycaster); const pt = new THREE.Vector3(); raycaster.ray.intersectPlane(dragPlane, pt);
-                    if(draggedConnectionEnd==='A') draggedConnection.floatA.copy(pt); else draggedConnection.floatB.copy(pt);
-                }
-            }
-
-            // 4. インタラクション (Grab Up)
-            if (InputManager.actions.grabUp) {
-                if (heldObject) {
-                    if(heldObject.userData.baseScale) heldObject.userData.targetScale = heldObject.userData.baseScale;
-                    if(heldObject.position.distanceTo(heldObject.userData.startPos) > 0.01) pushHistory({type:'move', moves:[{obj:heldObject, oldPos:heldObject.userData.startPos.clone()}]});
-                    heldObject = null;
-                }
-                if (draggedConnection) {
-                    InputManager.getRaycaster(raycaster); const hits = raycaster.intersectObjects(objects, true); let newTarget = null;
-                    for(let i=0; i<hits.length; i++) { let h = hits[i].object; if(h.parent && h.parent.userData.isGroup) h = h.parent; if(!h.userData.isConnection && (h.userData.isNode || h.userData.isGroup)) { newTarget=h; break; } }
-                    if(newTarget) { if(draggedConnectionEnd==='A') draggedConnection.objA=newTarget; else draggedConnection.objB=newTarget; pushHistory({type:'reconnect', conn:draggedConnection, end:draggedConnectionEnd, oldNode:draggedConnectionOriginalNode}); }
-                    else { if(draggedConnectionEnd==='A') draggedConnection.objA=draggedConnectionOriginalNode; else draggedConnection.objB=draggedConnectionOriginalNode; }
-                    draggedConnection = null;
-                }
-            }
-
-            // 5. アニメーション
             objects.forEach((o, i) => {
-                if (!o.userData.isConnection && o.parent === scene && heldObject !== o) { o.position.y += Math.sin(time + i) * 0.002; o.quaternion.slerp(camera.quaternion, 0.05); }
-                if (o.userData.targetScale) { const diff = o.userData.targetScale - o.scale.x; if(Math.abs(diff)>0.001) o.scale.setScalar(o.scale.x + diff*0.2); }
+                // 🚨 キャリー中のオブジェクトは揺らさない
+                if (!o.userData.isConnection && o.parent === scene && heldObject !== o && vrHeldObject !== o && carryingObject !== o) { 
+                    o.position.y += Math.sin(time + i) * 0.002; o.quaternion.slerp(camera.quaternion, 0.05); 
+                }
+                if (o.userData.targetScale) { 
+                    const diff = o.userData.targetScale - o.scale.x; if(Math.abs(diff)>0.001) o.scale.setScalar(o.scale.x + diff*0.2); 
+                }
             });
 
             updateConnections();
             renderer.render(scene, camera);
-            InputManager.resetFrame();
         });
 
-        window.onload = () => { setTimeout(() => spawnNameTag("究極進化", 1, new THREE.Vector3(0, 1.5, 6)), 500); };
+        window.onload = () => { 
+            const words = ["直感操作", "アイデア", "思考整理", "空間配置", "無限", "創造", "言葉を紡ぐ"];
+            words.forEach((w, i) => {
+                const angle = (i / words.length) * Math.PI * 2;
+                const r = 4;
+                const x = Math.sin(angle) * r;
+                const z = 10 - Math.cos(angle) * r;
+                setTimeout(() => spawnNameTag(w, 1, new THREE.Vector3(x, 1.5 + Math.random()*1.5, z)), 500 + i * 200); 
+            });
+        };
+        
+        window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
     </script>
 </body>
 </html>
+
+
+
+
+
