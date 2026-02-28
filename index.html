@@ -498,27 +498,60 @@
             const time = Date.now() * 0.001;
 
             if (!renderer.xr.isPresenting) {
+                // スマホ・PCでの移動
                 const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
                 playerRig.position.addScaledVector(camDir, -joyMove.y * 0.15); playerRig.position.addScaledVector(camRight, joyMove.x * 0.15);
-                
-                // 🚨 修正: キャリーモードの場合はカメラとの相対的な位置関係を維持して追従
-                if (carryingObject && carryingObject.userData.localOffset) {
-                    const targetPos = carryingObject.userData.localOffset.clone();
-                    targetPos.applyMatrix4(camera.matrixWorld);
-                    carryingObject.position.lerp(targetPos, 0.2);
-                    carryingObject.quaternion.slerp(camera.quaternion, 0.2); // カメラの方を向く
-                }
             } else {
+                // 🚨 VRでのジョイスティック移動 & ショートカット操作
                 const session = renderer.xr.getSession();
-                if (session && currentVrUiMode === 'shortcut') {
+                if (session) {
                     for (const s of session.inputSources) {
                         if (!s.gamepad) continue;
-                        const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
-                        if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
-                        prevBtns = {a:bA, b:bB, x:bX, y:bY};
+                        
+                        const axes = s.gamepad.axes;
+                        const deadzone = 0.15; // 誤動作防止のデッドゾーン
+
+                        // 1. 左手: 前後移動とカニ歩き
+                        if (s.handedness === 'left' && axes.length >= 2) {
+                            const xAxis = axes[0];
+                            const yAxis = axes[1];
+                            if (Math.abs(xAxis) > deadzone || Math.abs(yAxis) > deadzone) {
+                                const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
+                                const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
+                                
+                                // yAxis: 負=前, 正=後 | xAxis: 負=左, 正=右
+                                playerRig.position.addScaledVector(camDir, -yAxis * 0.08); 
+                                playerRig.position.addScaledVector(camRight, xAxis * 0.08);
+                            }
+                        }
+
+                        // 2. 右手: カメラの向き（ヨー）の回転
+                        if (s.handedness === 'right' && axes.length >= 1) {
+                            const xAxis = axes[0];
+                            if (Math.abs(xAxis) > deadzone) {
+                                // スムースターン（滑らかな回転）
+                                playerRig.rotation.y -= xAxis * 0.04;
+                            }
+                        }
+
+                        // 3. 物理ボタン（ショートカット）
+                        if (currentVrUiMode === 'shortcut') {
+                            const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
+                            if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
+                            prevBtns = {a:bA, b:bB, x:bX, y:bY};
+                        }
                     }
                 }
+            }
+
+            // 🚨 修正: スマホ/PCのキャリーモード追従を共通スコープへ移動
+            // （VRでも将来的な拡張のために共通化）
+            if (carryingObject && carryingObject.userData.localOffset) {
+                const targetPos = carryingObject.userData.localOffset.clone();
+                targetPos.applyMatrix4(camera.matrixWorld);
+                carryingObject.position.lerp(targetPos, 0.2);
+                carryingObject.quaternion.slerp(camera.quaternion, 0.2); // カメラの方を向く
             }
 
             objects.forEach((o, i) => {
@@ -550,6 +583,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
