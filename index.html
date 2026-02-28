@@ -28,7 +28,6 @@
 
         #ui-toggle-btn { position: relative; padding: 8px 20px; border-radius: 9999px; font-weight: bold; font-size: 14px; pointer-events: auto; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
-        /* VR移行ボタンのスタイル */
         button#VRButton { 
             position: relative !important; top: auto !important; right: auto !important; bottom: auto !important; left: auto !important; 
             transform: none !important; z-index: 30 !important; width: auto !important; padding: 8px 15px !important; margin: 0 !important;
@@ -57,7 +56,6 @@
             <svg id="ui-toggle-icon" class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
             <span>言葉を紡ぐ</span>
         </button>
-        <!-- VRButton -->
     </div>
 
     <div id="ui-bottom" class="glass-panel rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]" onpointerdown="event.stopPropagation()">
@@ -124,12 +122,16 @@
         let currentMode = 'move';
         
         let heldObject = null, isHoldingObject = false;
-        let carryingObject = null; // タップして持ち運び中のオブジェクト
+        let carryingObject = null; 
         let isLooking = false, lastLookX = 0, lastLookY = 0;
         let draggedConnection = null, draggedConnectionEnd = null, draggedConnectionOriginalNode = null;
         const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
         const dragOffset = new THREE.Vector3();
         let joyMove = new THREE.Vector2(0, 0);
+
+        // 🚨 ジャンプ用の変数
+        let playerVelocityY = 0;
+        let isGrounded = true;
 
         function spawnNameTag(word, scale=1, pos=null) {
             const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
@@ -230,6 +232,9 @@
             else if(currentMode==='connect') document.getElementById('btn-mode-connect').classList.add('mode-active');
             else if(currentMode==='delete') document.getElementById('btn-delete').classList.add('mode-delete-active');
             if(connectStartObj) { setEmissive(connectStartObj, 0x000000); connectStartObj=null; }
+            
+            // 🚨 VR用のモード表示を更新
+            updateVrModeDisplay();
         }
 
         document.getElementById('btn-mode-move').addEventListener('click', () => setMode('move'));
@@ -389,28 +394,56 @@
             }
         });
 
-        // VR Interaction
+        // ==========================================
+        // 5. VR Interaction (両手対応 & モードUI表示 & パレット開閉)
+        // ==========================================
         const VRState = { rightController: renderer.xr.getController(0), leftController: renderer.xr.getController(1) };
         playerRig.add(VRState.rightController); playerRig.add(VRState.leftController);
         const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
         VRState.rightController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
         VRState.leftController.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0,0,-5)]), lineMat));
 
-        let currentVrUiMode = 'palette'; 
+        // 🚨 左手コントローラーに「現在のモード」を表示するステータスパネルを追加
+        const modeCvs = document.createElement('canvas'); modeCvs.width=256; modeCvs.height=64;
+        const modeCtx = modeCvs.getContext('2d');
+        const modeTex = new THREE.CanvasTexture(modeCvs);
+        const modeMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.03), new THREE.MeshBasicMaterial({map: modeTex, transparent: true}));
+        modeMesh.position.set(0, 0.05, -0.05); // 左手首の少し上
+        modeMesh.rotation.x = -Math.PI / 4;
+        VRState.leftController.add(modeMesh);
+
+        function updateVrModeDisplay() {
+            modeCtx.clearRect(0,0,256,64);
+            modeCtx.fillStyle = 'rgba(30, 41, 59, 0.8)';
+            modeCtx.beginPath(); modeCtx.roundRect(0,0,256,64,15); modeCtx.fill();
+            
+            let txt = "✋ 移動"; let color = "#3b82f6";
+            if (currentMode === 'connect') { txt = "🔗 繋ぐ"; color = "#10b981"; }
+            else if (currentMode === 'delete') { txt = "🗑️ 消す"; color = "#ef4444"; }
+            
+            modeCtx.strokeStyle = color; modeCtx.lineWidth = 4; modeCtx.stroke();
+            modeCtx.fillStyle = '#fff'; modeCtx.font = 'bold 28px sans-serif';
+            modeCtx.textAlign = 'center'; modeCtx.textBaseline = 'middle';
+            modeCtx.fillText(txt, 128, 32);
+            modeTex.needsUpdate = true;
+        }
+
         const paletteGroup = new THREE.Group();
         paletteGroup.position.set(0, 0.1, -0.1); paletteGroup.rotation.x = -Math.PI/4; paletteGroup.rotation.y = Math.PI/6;
-        function createVrBtn(txt, y, id, color='#1e293b', border='#3b82f6') {
+        function createVrBtn(txt, y, id, color='#1e293b', border='#3b82f6', isLabel=false) {
             const cvs = document.createElement('canvas'); cvs.width=256; cvs.height=64; const ctx = cvs.getContext('2d');
             ctx.fillStyle=color; ctx.beginPath(); ctx.roundRect(0,0,256,64,15); ctx.fill(); ctx.strokeStyle=border; ctx.lineWidth=4; ctx.stroke();
-            ctx.fillStyle='#fff'; ctx.font='bold 28px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt, 128, 32);
+            ctx.fillStyle='#fff'; ctx.font= isLabel ? 'bold 20px sans-serif' : 'bold 28px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt, 128, 32);
             const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.04), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(cvs)}));
-            mesh.position.y = y; mesh.userData = { isVrButton: true, actionId: id }; return mesh;
+            mesh.position.y = y; mesh.userData = { isVrButton: !isLabel, actionId: id }; return mesh;
         }
         
+        // 🚨 パレットに操作案内のラベルを追加
         const vrButtons = [ 
+            createVrBtn("【Y】ボタンで開閉", 0.24, 'label', 'rgba(0,0,0,0)', 'transparent', true),
             createVrBtn("✋ 移動", 0.18, 'move'), createVrBtn("🔗 繋ぐ", 0.12, 'connect'), createVrBtn("🗑️ 消す", 0.06, 'delete', '#450a0a', '#ef4444'), 
             createVrBtn("📦 複数選択/囲う", 0.0, 'group', '#3b0764', '#a855f7'), createVrBtn("➕ 単語生成", -0.06, 'add'), 
-            createVrBtn("↩️ 元に戻す", -0.12, 'undo', '#334155', '#94a3b8'), createVrBtn("🔄 UI非表示", -0.18, 'toggle_ui') 
+            createVrBtn("↩️ 元に戻す", -0.12, 'undo', '#334155', '#94a3b8')
         ];
         vrButtons.forEach(b => paletteGroup.add(b)); VRState.leftController.add(paletteGroup);
 
@@ -426,20 +459,22 @@
             }
             else if(id==='group') document.getElementById('btn-group').click();
             else if(id==='undo') executeUndo();
-            else if(id==='add') { const presets=["VRの世界","直感操作","未来","アイデア","無限"]; spawnNameTag(presets[Math.floor(Math.random()*presets.length)], 1, new THREE.Vector3(0,0,-1).applyMatrix4(camera.matrixWorld)); }
-            else if(id==='toggle_ui') { currentVrUiMode = currentVrUiMode==='palette'?'shortcut':'palette'; paletteGroup.visible = (currentVrUiMode==='palette'); }
+            else if(id==='add') { const presets=["Aボタン: ジャンプ","Yボタン: メニュー","両手対応","直感操作","無限"]; spawnNameTag(presets[Math.floor(Math.random()*presets.length)], 1, new THREE.Vector3(0,0,-1).applyMatrix4(camera.matrixWorld)); }
         }
 
-        let vrHeldObject = null;
-
-        VRState.rightController.addEventListener('selectstart', (e) => {
+        // 🚨 両手での操作に対応するため関数化
+        function onSelectStart(e) {
             const controller = e.target;
             const tempMatrix = new THREE.Matrix4(); tempMatrix.identity().extractRotation(controller.matrixWorld);
             raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld); raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-            if (currentVrUiMode === 'palette') {
+            if (paletteGroup.visible) {
                 const uiHits = raycaster.intersectObjects(vrButtons);
-                if(uiHits.length > 0) { const b = uiHits[0].object; handleVrAction(b.userData.actionId); b.scale.setScalar(0.9); setTimeout(()=>b.scale.setScalar(1), 150); return; }
+                if(uiHits.length > 0 && uiHits[0].object.userData.isVrButton) { 
+                    const b = uiHits[0].object; handleVrAction(b.userData.actionId); 
+                    b.scale.setScalar(0.9); setTimeout(()=>b.scale.setScalar(1), 150); 
+                    return; 
+                }
             }
 
             const hits = raycaster.intersectObjects(objects, true);
@@ -448,8 +483,10 @@
                 
                 if (currentMode === 'move') {
                     if(!target.userData.isConnection) {
-                        vrHeldObject = target; vrHeldObject.userData.startPos = vrHeldObject.position.clone(); controller.attach(vrHeldObject); 
-                        if(vrHeldObject.userData.baseScale) vrHeldObject.userData.targetScale = vrHeldObject.userData.baseScale * 1.2;
+                        controller.userData.vrHeldObject = target; 
+                        target.userData.startPos = target.position.clone(); 
+                        controller.attach(target); 
+                        if(target.userData.baseScale) target.userData.targetScale = target.userData.baseScale * 1.2;
                     }
                 } else if (currentMode === 'connect' && !target.userData.isConnection) {
                     if (!connectStartObj) { connectStartObj = target; setEmissive(target, 0x333333); }
@@ -459,22 +496,30 @@
                     executeDelete([target]);
                 }
             } else { updateSelection(null); if(connectStartObj){ setEmissive(connectStartObj, 0x000000); connectStartObj=null; } }
-        });
+        }
 
-        VRState.rightController.addEventListener('selectend', () => {
-            if (vrHeldObject) {
-                scene.attach(vrHeldObject); 
-                if(vrHeldObject.userData.baseScale) vrHeldObject.userData.targetScale = vrHeldObject.userData.baseScale;
-                if(vrHeldObject.position.distanceTo(vrHeldObject.userData.startPos) > 0.01) {
-                    pushHistory({type:'move', moves:[{obj:vrHeldObject, oldPos:vrHeldObject.userData.startPos.clone()}]});
+        function onSelectEnd(e) {
+            const controller = e.target;
+            const heldObj = controller.userData.vrHeldObject;
+            if (heldObj) {
+                scene.attach(heldObj); 
+                if(heldObj.userData.baseScale) heldObj.userData.targetScale = heldObj.userData.baseScale;
+                if(heldObj.position.distanceTo(heldObj.userData.startPos) > 0.01) {
+                    pushHistory({type:'move', moves:[{obj:heldObj, oldPos:heldObj.userData.startPos.clone()}]});
                 } else {
-                    updateSelection(vrHeldObject); 
+                    updateSelection(heldObj); 
                 }
-                vrHeldObject = null;
+                controller.userData.vrHeldObject = null;
             }
-        });
+        }
 
-        renderer.xr.addEventListener('sessionstart', () => { document.body.classList.add('is-vr'); camera.position.set(0,0,0); });
+        // 両手コントローラーにイベントを登録
+        VRState.rightController.addEventListener('selectstart', onSelectStart);
+        VRState.rightController.addEventListener('selectend', onSelectEnd);
+        VRState.leftController.addEventListener('selectstart', onSelectStart);
+        VRState.leftController.addEventListener('selectend', onSelectEnd);
+
+        renderer.xr.addEventListener('sessionstart', () => { document.body.classList.add('is-vr'); camera.position.set(0,0,0); updateVrModeDisplay(); });
         renderer.xr.addEventListener('sessionend', () => { document.body.classList.remove('is-vr'); camera.position.set(0,1.6,0); });
 
         // Animation Loop
@@ -488,48 +533,55 @@
                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
                 playerRig.position.addScaledVector(camDir, -joyMove.y * 0.15); playerRig.position.addScaledVector(camRight, joyMove.x * 0.15);
             } else {
-                // 🚨 VRでのジョイスティック移動 & ショートカット操作
                 const session = renderer.xr.getSession();
-                if (session && currentVrUiMode === 'shortcut') {
-                    for (const s of session.inputSources) {
-                        if (!s.gamepad) continue;
-                        const bA = s.handedness==='right' && s.gamepad.buttons[4]?.pressed, bB = s.handedness==='right' && s.gamepad.buttons[5]?.pressed, bX = s.handedness==='left' && s.gamepad.buttons[4]?.pressed, bY = s.handedness==='left' && s.gamepad.buttons[5]?.pressed;
-                        if(bA && !prevBtns.a) setMode('move'); if(bB && !prevBtns.b) setMode('connect'); if(bX && !prevBtns.x) document.getElementById('btn-delete').click(); if(bY && !prevBtns.y) handleVrAction('toggle_ui');
-                        prevBtns = {a:bA, b:bB, x:bX, y:bY};
+                
+                // 🚨 ジャンプ＆重力処理
+                if (!isGrounded) {
+                    playerVelocityY -= 9.8 * 0.016; // 簡易的な重力
+                    playerRig.position.y += playerVelocityY * 0.016;
+                    if (playerRig.position.y <= 0) {
+                        playerRig.position.y = 0;
+                        playerVelocityY = 0;
+                        isGrounded = true;
                     }
                 }
 
-                // 🚨 ジョイスティックによる移動と旋回
                 if (session) {
                     for (const s of session.inputSources) {
                         if (!s.gamepad) continue;
                         const axes = s.gamepad.axes;
                         let xAxis = 0, yAxis = 0;
                         
-                        // コントローラーによってaxesのインデックスが異なるため柔軟に対応
-                        if (axes.length >= 4) {
-                            xAxis = axes[2]; yAxis = axes[3]; // 一般的なQuest環境
-                        } else if (axes.length >= 2) {
-                            xAxis = axes[0]; yAxis = axes[1];
-                        }
+                        if (axes.length >= 4) { xAxis = axes[2]; yAxis = axes[3]; } 
+                        else if (axes.length >= 2) { xAxis = axes[0]; yAxis = axes[1]; }
 
                         const deadzone = 0.15;
                         if (Math.abs(xAxis) < deadzone) xAxis = 0;
                         if (Math.abs(yAxis) < deadzone) yAxis = 0;
 
                         if (s.handedness === 'left') {
-                            // 左手: 前後とカニ歩き
                             if (xAxis !== 0 || yAxis !== 0) {
                                 const camDir = new THREE.Vector3(); camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                                 const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
                                 playerRig.position.addScaledVector(camDir, -yAxis * 0.08);
                                 playerRig.position.addScaledVector(camRight, xAxis * 0.08);
                             }
+                            
+                            // 左手Yボタンでパレットメニューの表示/非表示をトグル
+                            const bY = s.gamepad.buttons[5]?.pressed;
+                            if (bY && !prevBtns.y) paletteGroup.visible = !paletteGroup.visible;
+                            prevBtns.y = bY;
+
                         } else if (s.handedness === 'right') {
-                            // 右手: 旋回 (スムーズターン)
-                            if (xAxis !== 0) {
-                                playerRig.rotation.y -= xAxis * 0.04;
+                            if (xAxis !== 0) playerRig.rotation.y -= xAxis * 0.04;
+
+                            // 右手Aボタンでジャンプ
+                            const bA = s.gamepad.buttons[4]?.pressed;
+                            if (bA && !prevBtns.a && isGrounded) {
+                                playerVelocityY = 4.0; // ジャンプの初速
+                                isGrounded = false;
                             }
+                            prevBtns.a = bA;
                         }
                     }
                 }
@@ -542,8 +594,11 @@
                 carryingObject.quaternion.slerp(camera.quaternion, 0.2); 
             }
 
+            const vrHeldR = VRState.rightController.userData.vrHeldObject;
+            const vrHeldL = VRState.leftController.userData.vrHeldObject;
+
             objects.forEach((o, i) => {
-                if (!o.userData.isConnection && o.parent === scene && heldObject !== o && vrHeldObject !== o && carryingObject !== o) { 
+                if (!o.userData.isConnection && o.parent === scene && heldObject !== o && vrHeldR !== o && vrHeldL !== o && carryingObject !== o) { 
                     o.position.y += Math.sin(time + i) * 0.002; o.quaternion.slerp(camera.quaternion, 0.05); 
                 }
                 if (o.userData.targetScale) { 
@@ -555,9 +610,11 @@
             renderer.render(scene, camera);
         });
 
-        // 🚨 初期ノードに今回のデバッグ・実装項目を反映
+        // 初期化時にモード表示を更新
+        setMode('move');
+
         window.onload = () => { 
-            const words = ["左スティック移動", "右スティック旋回", "カニ歩き対応", "VR操作改善", "アイデア", "思考整理", "無限"];
+            const words = ["両手操作対応", "Aボタンでジャンプ", "Yボタンでメニュー", "VR操作改善", "アイデア", "思考整理", "無限"];
             words.forEach((w, i) => {
                 const angle = (i / words.length) * Math.PI * 2;
                 const r = 4;
